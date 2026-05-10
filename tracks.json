@@ -26,7 +26,7 @@
     "band": "artist",
     "genre": "genre",
     "note": "track note",
-    "date": "2026-05-11T12:00:00.000Z",
+    "date": "2026-03-11T11:00:00.000Z",
     "links": [
       { "platform": "Soundcloud", "url": "https://soundcloud.com" },
       { "platform": "YouTube", "url": "https://youtube.com" }
@@ -37,7 +37,7 @@
     "band": "artist",
     "genre": "genre",
     "note": "track note",
-    "date": "2026-05-11T12:00:00.000Z",
+    "date": "2026-04-11T12:00:00.000Z",
     "links": [
       { "platform": "Soundcloud", "url": "https://soundcloud.com" },
       { "platform": "YouTube", "url": "https://youtube.com" }
