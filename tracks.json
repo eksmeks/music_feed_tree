@@ -15,7 +15,7 @@
     "band": "artist",
     "genre": "genre",
     "note": "track note",
-    "date": "2026-05-11T12:00:00.000Z",
+    "date": "2026-05-11T01:00:00.000Z",
     "links": [
       { "platform": "Soundcloud", "url": "https://soundcloud.com" },
       { "platform": "YouTube", "url": "https://youtube.com" }
