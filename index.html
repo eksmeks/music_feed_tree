@@ -20,7 +20,7 @@
     --text3: #555;
     --accent: #c8f060;
     --radius: 6px;
-    --sidebar: 260px;
+    --sidebar: 320px;
   }
 
   html, body { height: 100%; }
@@ -77,8 +77,9 @@
   .band-arrow.open { transform: rotate(90deg); }
   .track-group { display: none; }
   .track-group.open { display: block; }
-  .track-row { display: flex; align-items: center; gap: 5px; padding: 4px 16px 4px 48px; cursor: pointer; font-size: 11px; color: var(--text3); transition: color 0.15s; font-family: 'DM Mono', monospace; font-weight: 300; }
+  .track-row { display: flex; align-items: center; gap: 5px; padding: 4px 16px 4px 48px; cursor: pointer; font-size: 11px; color: var(--text3); transition: color 0.15s, background 0.15s; font-family: 'DM Mono', monospace; font-weight: 300; border-radius: 3px; }
   .track-row:hover { color: var(--accent); }
+  .track-row.active { color: var(--accent); background: rgba(200,240,96,0.07); }
   .track-row::before { content: '—'; color: var(--text3); font-size: 10px; }
 
   .main { display: flex; flex-direction: column; overflow: hidden; }
@@ -116,6 +117,28 @@
   .stream-link { display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; font-size: 11px; font-family: 'DM Mono', monospace; color: var(--text2); background: var(--bg3); border: 1px solid var(--border); border-radius: 3px; text-decoration: none; transition: all 0.15s; letter-spacing: 0.02em; }
   .stream-link:hover { color: var(--accent); border-color: rgba(200,240,96,0.3); background: rgba(200,240,96,0.05); }
   .stream-link svg { width: 12px; height: 12px; fill: currentColor; flex-shrink: 0; }
+
+  /* Detail view */
+  .detail-wrap { flex: 1; overflow-y: auto; padding: 36px 40px; animation: slideIn 0.18s ease; }
+  .detail-wrap::-webkit-scrollbar { width: 3px; }
+  .detail-wrap::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+  .detail-back { display: inline-flex; align-items: center; gap: 6px; font-family: 'DM Mono', monospace; font-size: 11px; color: var(--text3); cursor: pointer; margin-bottom: 32px; border: none; background: none; padding: 0; transition: color 0.15s; letter-spacing: 0.04em; }
+  .detail-back:hover { color: var(--text2); }
+  .detail-back::before { content: '← '; }
+  .detail-title { font-size: 28px; font-weight: 500; color: var(--text); margin-bottom: 8px; line-height: 1.2; }
+  .detail-band { font-size: 16px; color: var(--text2); margin-bottom: 16px; }
+  .detail-meta { display: flex; align-items: center; gap: 10px; margin-bottom: 28px; flex-wrap: wrap; }
+  .detail-note { font-size: 13px; color: var(--text3); font-style: italic; margin-bottom: 32px; line-height: 1.6; border-left: 2px solid var(--border2); padding-left: 12px; }
+  .detail-section-label { font-family: 'DM Mono', monospace; font-size: 10px; color: var(--text3); letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 12px; }
+  .detail-links { display: flex; flex-direction: column; gap: 8px; }
+  .detail-link { display: flex; align-items: center; gap: 12px; padding: 12px 16px; background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); text-decoration: none; color: var(--text); transition: border-color 0.15s, background 0.15s; }
+  .detail-link:hover { border-color: rgba(200,240,96,0.35); background: rgba(200,240,96,0.04); }
+  .detail-link svg { width: 16px; height: 16px; fill: var(--text2); flex-shrink: 0; transition: fill 0.15s; }
+  .detail-link:hover svg { fill: var(--accent); }
+  .detail-link-name { font-size: 13px; font-family: 'DM Mono', monospace; transition: color 0.15s; }
+  .detail-link:hover .detail-link-name { color: var(--accent); }
+  .detail-link-url { font-size: 11px; color: var(--text3); margin-left: auto; max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .detail-date { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--text3); margin-top: 40px; padding-top: 20px; border-top: 1px solid var(--border); }
 
   /* Genre badge colors */
   .g-electronic { color: #7dd3fc; border-color: rgba(125,211,252,0.3); }
@@ -198,6 +221,7 @@ const PLATFORM_ICONS = {
 
 let tracks = [];
 let currentView = 'feed';
+let currentTrackIdx = null;
 
 function esc(s) {
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
@@ -334,7 +358,10 @@ function renderTree() {
           <span class="band-arrow" id="ba-${bid}">▶</span>${esc(band)}
         </div>
         <div class="track-group" id="${bid}">
-          ${byGenre[genre][band].map(t => `<div class="track-row">${esc(t.title)}</div>`).join('')}
+          ${byGenre[genre][band].map((t,i) => {
+            const idx = tracks.indexOf(t);
+            return `<div class="track-row" id="trow-${idx}" onclick="openTrack(${idx})">${esc(t.title)}</div>`;
+          }).join('')}
         </div>`;
     }
     html += `</div>`;
@@ -347,6 +374,54 @@ function tog(id, arrowId) {
   document.getElementById(arrowId).classList.toggle('open');
 }
 
+function openTrack(idx) {
+  // highlight active row
+  document.querySelectorAll('.track-row').forEach(r => r.classList.remove('active'));
+  const row = document.getElementById('trow-' + idx);
+  if (row) row.classList.add('active');
+
+  currentView = 'detail';
+  currentTrackIdx = idx;
+  // deactivate tab highlights
+  document.querySelectorAll('.view-tab').forEach(t => t.classList.remove('active'));
+  renderDetail(tracks[idx]);
+}
+
+function renderDetail(t) {
+  const wrap = document.getElementById('feed-wrap');
+  const gc = GENRE_CLASS[t.genre] || 'g-other';
+  const links = (t.links && t.links.length)
+    ? t.links.map(l => `
+        <a class="detail-link" href="${esc(l.url)}" target="_blank" rel="noopener">
+          ${getIcon(l.platform)}
+          <span class="detail-link-name">${esc(l.platform)}</span>
+          <span class="detail-link-url">${esc(l.url.replace(/^https?:\/\//,''))}</span>
+        </a>`).join('')
+    : '<span style="color:var(--text3);font-size:12px;font-family:\'DM Mono\',monospace;">keine Links eingetragen</span>';
+
+  wrap.innerHTML = `
+    <div class="detail-wrap">
+      <button class="detail-back" onclick="backToFeed()">zurück zum feed</button>
+      <div class="detail-title">${esc(t.title)}</div>
+      <div class="detail-band">${esc(t.band)}</div>
+      <div class="detail-meta">
+        <span class="card-badge ${gc}">${esc(t.genre)}</span>
+      </div>
+      ${t.note ? `<div class="detail-note">${esc(t.note)}</div>` : ''}
+      <div class="detail-section-label">Streaming-Links</div>
+      <div class="detail-links">${links}</div>
+      <div class="detail-date">gepostet ${formatDate(t.date)}</div>
+    </div>`;
+}
+
+function backToFeed() {
+  document.querySelectorAll('.track-row').forEach(r => r.classList.remove('active'));
+  currentView = 'feed';
+  currentTrackIdx = null;
+  document.querySelectorAll('.view-tab').forEach((t,i) => { if(i===0) t.classList.add('active'); });
+  renderFeed();
+}
+
 function setView(v, el) {
   currentView = v;
   document.querySelectorAll('.view-tab').forEach(t => t.classList.remove('active'));
@@ -355,7 +430,8 @@ function setView(v, el) {
 }
 
 function renderMain() {
-  if (currentView === 'genre') renderGenreView();
+  if (currentView === 'detail' && currentTrackIdx !== null) renderDetail(tracks[currentTrackIdx]);
+  else if (currentView === 'genre') renderGenreView();
   else renderFeed();
 }
 
