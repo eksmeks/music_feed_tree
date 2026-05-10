@@ -11,3 +11,15 @@
     ]
   }
 ]
+[
+  {
+    "title": "Mr Crowley",
+    "band": "Ozzy Ozbourne",
+    "genre": "Rock",
+    "note": "BS",
+    "date": "2026-05-11T12:00:00.000Z",
+    "links": [
+      { "platform": "YouTube", "url": "https://www.youtube.com/watch?v=G3LvhdFEOqs&pp=ygUYYmxhY2sgc2FiYmF0aCBtciBjcm93bGV5" }
+    ]
+  }
+]
