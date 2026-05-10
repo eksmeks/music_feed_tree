@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Musik Feed</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0d0d0d;
+    --bg2: #141414;
+    --bg3: #1a1a1a;
+    --border: rgba(255,255,255,0.07);
+    --border2: rgba(255,255,255,0.13);
+    --text: #e8e4dc;
+    --text2: #888;
+    --text3: #555;
+    --accent: #c8f060;
+    --radius: 6px;
+    --sidebar: 260px;
+  }
+
+  html, body { height: 100%; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    line-height: 1.5;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    overflow: hidden;
+  }
+
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 24px;
+    height: 52px;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+  .logo { font-family: 'DM Mono', monospace; font-size: 13px; font-weight: 500; color: var(--accent); letter-spacing: 0.04em; }
+  .logo span { color: var(--text3); font-weight: 300; }
+  .header-right { display: flex; gap: 10px; align-items: center; }
+  .tag-count { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--text3); padding: 3px 8px; border: 1px solid var(--border); border-radius: 20px; }
+
+  .layout { display: grid; grid-template-columns: var(--sidebar) 1fr; flex: 1; overflow: hidden; }
+
+  .sidebar { border-right: 1px solid var(--border); display: flex; flex-direction: column; overflow: hidden; background: var(--bg2); }
+  .sidebar-top { padding: 14px 16px 10px; border-bottom: 1px solid var(--border); }
+  .sidebar-label { font-family: 'DM Mono', monospace; font-size: 10px; color: var(--text3); letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 10px; }
+  .search-wrap { position: relative; }
+  .search-wrap input { width: 100%; background: var(--bg3); border: 1px solid var(--border); border-radius: var(--radius); color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 12px; padding: 6px 10px 6px 26px; outline: none; }
+  .search-wrap input::placeholder { color: var(--text3); }
+  .search-wrap input:focus { border-color: var(--border2); }
+  .search-icon { position: absolute; left: 8px; top: 50%; transform: translateY(-50%); color: var(--text3); font-size: 13px; pointer-events: none; }
+  .tree-scroll { flex: 1; overflow-y: auto; padding: 8px 0; }
+  .tree-scroll::-webkit-scrollbar { width: 3px; }
+  .tree-scroll::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+  .genre-row { display: flex; align-items: center; gap: 6px; padding: 7px 16px; cursor: pointer; font-family: 'DM Mono', monospace; font-size: 11px; font-weight: 500; color: var(--text2); letter-spacing: 0.04em; text-transform: uppercase; transition: color 0.15s; user-select: none; }
+  .genre-row:hover { color: var(--text); }
+  .genre-arrow { font-size: 10px; transition: transform 0.15s; color: var(--text3); }
+  .genre-arrow.open { transform: rotate(90deg); }
+  .genre-count { margin-left: auto; font-size: 10px; color: var(--text3); font-weight: 300; }
+  .band-group { display: none; }
+  .band-group.open { display: block; }
+  .band-row { display: flex; align-items: center; gap: 5px; padding: 5px 16px 5px 30px; cursor: pointer; font-size: 12px; color: var(--text3); transition: color 0.15s; user-select: none; }
+  .band-row:hover { color: var(--text2); }
+  .band-arrow { font-size: 9px; transition: transform 0.15s; }
+  .band-arrow.open { transform: rotate(90deg); }
+  .track-group { display: none; }
+  .track-group.open { display: block; }
+  .track-row { display: flex; align-items: center; gap: 5px; padding: 4px 16px 4px 48px; cursor: pointer; font-size: 11px; color: var(--text3); transition: color 0.15s; font-family: 'DM Mono', monospace; font-weight: 300; }
+  .track-row:hover { color: var(--accent); }
+  .track-row::before { content: '—'; color: var(--text3); font-size: 10px; }
+
+  .main { display: flex; flex-direction: column; overflow: hidden; }
+  .main-bar { display: flex; align-items: center; justify-content: space-between; padding: 0 24px; height: 48px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+  .view-tabs { display: flex; gap: 2px; }
+  .view-tab { padding: 4px 12px; font-family: 'DM Mono', monospace; font-size: 11px; color: var(--text3); cursor: pointer; border-radius: var(--radius); border: none; background: none; transition: all 0.15s; letter-spacing: 0.04em; }
+  .view-tab:hover { color: var(--text2); background: var(--bg3); }
+  .view-tab.active { color: var(--accent); background: rgba(200,240,96,0.08); }
+
+  /* The edit button links to GitHub */
+  .edit-btn { background: var(--accent); color: #0d0d0d; border: none; border-radius: var(--radius); padding: 7px 16px; font-family: 'DM Mono', monospace; font-size: 11px; font-weight: 500; cursor: pointer; letter-spacing: 0.04em; transition: background 0.15s; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; }
+  .edit-btn:hover { background: #d6f577; }
+
+  .feed-wrap { flex: 1; overflow-y: auto; padding: 20px 24px; }
+  .feed-wrap::-webkit-scrollbar { width: 3px; }
+  .feed-wrap::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+  .empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; gap: 10px; color: var(--text3); font-family: 'DM Mono', monospace; font-size: 12px; }
+  .empty-state .big { font-size: 32px; }
+
+  .loading-state { display: flex; align-items: center; justify-content: center; height: 100%; color: var(--text3); font-family: 'DM Mono', monospace; font-size: 12px; gap: 8px; }
+  .spinner { width: 14px; height: 14px; border: 2px solid var(--border2); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.7s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .track-card { border: 1px solid var(--border); border-radius: var(--radius); padding: 16px 18px; margin-bottom: 10px; background: var(--bg2); transition: border-color 0.15s; animation: slideIn 0.2s ease; }
+  .track-card:hover { border-color: var(--border2); }
+  @keyframes slideIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
+
+  .card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 10px; }
+  .card-title { font-size: 15px; font-weight: 500; color: var(--text); margin-bottom: 3px; }
+  .card-meta { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text2); flex-wrap: wrap; }
+  .card-dot { color: var(--text3); }
+  .card-badge { font-family: 'DM Mono', monospace; font-size: 10px; padding: 2px 7px; border-radius: 3px; border: 1px solid; letter-spacing: 0.04em; }
+  .card-date { font-family: 'DM Mono', monospace; font-size: 10px; color: var(--text3); white-space: nowrap; flex-shrink: 0; }
+
+  .stream-links { display: flex; flex-wrap: wrap; gap: 6px; }
+  .stream-link { display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; font-size: 11px; font-family: 'DM Mono', monospace; color: var(--text2); background: var(--bg3); border: 1px solid var(--border); border-radius: 3px; text-decoration: none; transition: all 0.15s; letter-spacing: 0.02em; }
+  .stream-link:hover { color: var(--accent); border-color: rgba(200,240,96,0.3); background: rgba(200,240,96,0.05); }
+  .stream-link svg { width: 12px; height: 12px; fill: currentColor; flex-shrink: 0; }
+
+  /* Genre badge colors */
+  .g-electronic { color: #7dd3fc; border-color: rgba(125,211,252,0.3); }
+  .g-metal      { color: #fca5a5; border-color: rgba(252,165,165,0.3); }
+  .g-jazz       { color: #86efac; border-color: rgba(134,239,172,0.3); }
+  .g-hiphop     { color: #c084fc; border-color: rgba(192,132,252,0.3); }
+  .g-rock       { color: #fb923c; border-color: rgba(251,146,60,0.3); }
+  .g-classical  { color: #f9a8d4; border-color: rgba(249,168,212,0.3); }
+  .g-ambient    { color: #67e8f9; border-color: rgba(103,232,249,0.3); }
+  .g-other      { color: #d6d3d1; border-color: rgba(214,211,209,0.3); }
+
+  /* Info box */
+  .info-box { margin: 0 24px 16px; background: rgba(200,240,96,0.05); border: 1px solid rgba(200,240,96,0.15); border-radius: var(--radius); padding: 12px 16px; font-family: 'DM Mono', monospace; font-size: 11px; color: var(--text3); line-height: 1.7; display: none; }
+  .info-box.visible { display: block; }
+  .info-box strong { color: var(--accent); font-weight: 500; }
+  .info-box code { background: var(--bg3); padding: 1px 5px; border-radius: 3px; color: var(--text2); font-size: 10px; }
+
+  @media (max-width: 640px) {
+    .layout { grid-template-columns: 1fr; }
+    .sidebar { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">MUSIK<span>.feed</span></div>
+  <div class="header-right">
+    <span class="tag-count" id="track-count">lädt…</span>
+    <!--
+      WICHTIG: Ersetze den Link unten mit dem direkten Link zur tracks.json auf GitHub.
+      Gehe auf GitHub zu deiner tracks.json → klicke den Stift-Button (Edit) → kopiere die URL aus der Adressleiste.
+      Beispiel: https://github.com/DEINNAME/musik-feed/edit/main/tracks.json
+    -->
+    <a class="edit-btn" id="edit-link" href="https://github.com/DEINNAME/DEIN-REPO/edit/main/tracks.json" target="_blank">
+      ✎ Tracks bearbeiten
+    </a>
+  </div>
+</header>
+
+<div class="layout">
+  <div class="sidebar">
+    <div class="sidebar-top">
+      <div class="sidebar-label">Bibliothek</div>
+      <div class="search-wrap">
+        <span class="search-icon">⌕</span>
+        <input type="text" id="search-input" placeholder="Suchen…" oninput="renderAll()">
+      </div>
+    </div>
+    <div class="tree-scroll" id="tree"></div>
+  </div>
+
+  <div class="main">
+    <div class="main-bar">
+      <div class="view-tabs">
+        <button class="view-tab active" onclick="setView('feed',this)">Feed</button>
+        <button class="view-tab" onclick="setView('genre',this)">Genre</button>
+      </div>
+    </div>
+
+    <div class="info-box" id="info-box">
+      <strong>So fügst du neue Tracks hinzu:</strong><br>
+      Klicke oben auf „✎ Tracks bearbeiten" → du landest direkt in der <code>tracks.json</code> auf GitHub.<br>
+      Füge einen neuen Block am Anfang des Arrays ein, speichere (Commit) → fertig, die Seite zeigt ihn sofort.
+    </div>
+
+    <div class="feed-wrap" id="feed-wrap">
+      <div class="loading-state"><div class="spinner"></div> tracks.json wird geladen…</div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─── KONFIGURATION ──────────────────────────────────────────────────────────
+// Passe diese URL an – ersetze DEINNAME und DEIN-REPO mit deinen GitHub-Werten.
+// Die Datei muss öffentlich erreichbar sein (public repo).
+const TRACKS_URL = 'tracks.json';
+// Wenn du die Seite lokal testest, bleibt 'tracks.json' korrekt.
+// Auf GitHub Pages wird die Datei automatisch relativ zur index.html gefunden.
+// ────────────────────────────────────────────────────────────────────────────
+
+const GENRE_CLASS = {
+  'Electronic':'g-electronic','Metal':'g-metal','Jazz':'g-jazz',
+  'Hip-Hop':'g-hiphop','Rock':'g-rock','Classical':'g-classical',
+  'Ambient':'g-ambient','Other':'g-other'
+};
+
+const PLATFORM_ICONS = {
+  'Spotify': '<svg viewBox="0 0 24 24"><path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/></svg>',
+  'YouTube': '<svg viewBox="0 0 24 24"><path d="M23.495 6.205a3.007 3.007 0 0 0-2.088-2.088c-1.87-.501-9.396-.501-9.396-.501s-7.507-.01-9.396.501A3.007 3.007 0 0 0 .527 6.205a31.247 31.247 0 0 0-.522 5.805 31.247 31.247 0 0 0 .522 5.783 3.007 3.007 0 0 0 2.088 2.088c1.868.502 9.396.502 9.396.502s7.506 0 9.396-.502a3.007 3.007 0 0 0 2.088-2.088 31.247 31.247 0 0 0 .5-5.783 31.247 31.247 0 0 0-.5-5.805zM9.609 15.601V8.408l6.264 3.602z"/></svg>',
+  'Bandcamp': '<svg viewBox="0 0 24 24"><path d="M0 18.75l7.437-13.5H24l-7.438 13.5z"/></svg>',
+  'SoundCloud': '<svg viewBox="0 0 24 24"><path d="M11.56 8.87V17h8.76c1.44 0 2.59-1.19 2.59-2.63 0-1.45-1.17-2.62-2.62-2.62-.29 0-.57.04-.83.12C19.2 9.58 17.3 7.81 15 7.81c-1.3 0-2.48.5-3.44 1.06M10.06 17H1.23C.55 17 0 16.45 0 15.77v-.08C0 15.01.55 14.46 1.23 14.46h8.83V17z"/></svg>',
+  'Apple Music': '<svg viewBox="0 0 24 24"><path d="M23.994 6.124a9.23 9.23 0 0 0-.24-2.19c-.317-1.31-1.048-2.31-2.08-3.03a5.022 5.022 0 0 0-1.76-.73c-.51-.105-1.08-.16-2.106-.19L17.5 0h-11l-.308.005c-1.026.03-1.596.085-2.105.19a5.022 5.022 0 0 0-1.76.73c-1.032.72-1.763 1.72-2.08 3.03a9.23 9.23 0 0 0-.24 2.19C0 6.5 0 6.727 0 7.5v9c0 .773 0 1 .007 1.376a9.23 9.23 0 0 0 .24 2.19c.317 1.31 1.048 2.31 2.08 3.03a5.022 5.022 0 0 0 1.76.73c.51.105 1.08.16 2.106.19L6.5 24h11l.308-.005c1.026-.03 1.596-.085 2.105-.19a5.022 5.022 0 0 0 1.76-.73c1.032-.72 1.763-1.72 2.08-3.03a9.23 9.23 0 0 0 .24-2.19C24 17.5 24 17.273 24 16.5v-9c0-.773 0-1-.006-1.376zM15.5 7v8.5a2.5 2.5 0 0 1-5 0V13H9v-2h1.5V7H15.5z"/></svg>',
+  'Tidal': '<svg viewBox="0 0 24 24"><path d="M12.012 3.992L8.008 7.996 4.004 3.992 0 7.996l4.004 4.004 4.004-4.004 4.004 4.004 4.004-4.004L19.996 12l4.004-4.004-4.004-4.004-4.004 4.004-3.98-4.004zM8.008 16.004l-4.004 4.004L0 16.004 4.004 12l4.004 4.004z"/></svg>',
+  'Deezer': '<svg viewBox="0 0 24 24"><path d="M18.81 11.333c0-.44.402-.8.897-.8s.898.36.898.8c0 .44-.403.8-.898.8s-.897-.36-.897-.8zm-3.586 0c0-.44.402-.8.897-.8s.898.36.898.8c0 .44-.403.8-.898.8s-.897-.36-.897-.8zm-3.587 0c0-.44.403-.8.898-.8s.897.36.897.8-.402.8-.897.8-.898-.36-.898-.8zm-3.586 0c0-.44.402-.8.897-.8s.898.36.898.8c0 .44-.403.8-.898.8s-.897-.36-.897-.8zm-3.586 0c0-.44.402-.8.897-.8s.897.36.897.8c0 .44-.402.8-.897.8s-.897-.36-.897-.8z"/></svg>',
+  'default': '<svg viewBox="0 0 24 24"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/></svg>'
+};
+
+let tracks = [];
+let currentView = 'feed';
+
+function esc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function formatDate(iso) {
+  const d = new Date(iso);
+  const now = new Date();
+  const diff = Math.floor((now - d) / 1000);
+  if (diff < 60) return 'gerade eben';
+  if (diff < 3600) return Math.floor(diff/60) + ' min';
+  if (diff < 86400) return Math.floor(diff/3600) + ' h';
+  if (diff < 604800) return Math.floor(diff/86400) + ' Tage';
+  return d.toLocaleDateString('de-DE', {day:'2-digit', month:'2-digit', year:'2-digit'});
+}
+
+function getIcon(p) { return PLATFORM_ICONS[p] || PLATFORM_ICONS['default']; }
+
+function renderLinks(links) {
+  if (!links || !links.length) return '<span style="color:var(--text3);font-size:11px;">keine Links</span>';
+  return links.map(l =>
+    `<a class="stream-link" href="${esc(l.url)}" target="_blank" rel="noopener">
+      ${getIcon(l.platform)}${esc(l.platform)}
+    </a>`
+  ).join('');
+}
+
+function getQuery() { return (document.getElementById('search-input').value || '').toLowerCase().trim(); }
+
+function filtered() {
+  const q = getQuery();
+  if (!q) return tracks;
+  return tracks.filter(t =>
+    (t.title||'').toLowerCase().includes(q) ||
+    (t.band||'').toLowerCase().includes(q) ||
+    (t.genre||'').toLowerCase().includes(q) ||
+    (t.note||'').toLowerCase().includes(q)
+  );
+}
+
+function renderFeed() {
+  const wrap = document.getElementById('feed-wrap');
+  const list = filtered();
+  if (!list.length) {
+    wrap.innerHTML = `<div class="empty-state"><div class="big">♪</div><div>${getQuery() ? 'Keine Treffer.' : 'Noch keine Tracks in der tracks.json.'}</div></div>`;
+    return;
+  }
+  wrap.innerHTML = list.map(t => {
+    const gc = GENRE_CLASS[t.genre] || 'g-other';
+    return `<div class="track-card">
+      <div class="card-top">
+        <div>
+          <div class="card-title">${esc(t.title)}</div>
+          <div class="card-meta">
+            <span>${esc(t.band)}</span>
+            <span class="card-dot">·</span>
+            <span class="card-badge ${gc}">${esc(t.genre)}</span>
+            ${t.note ? `<span class="card-dot">·</span><span style="color:var(--text3);font-size:11px;font-style:italic;">${esc(t.note)}</span>` : ''}
+          </div>
+        </div>
+        <span class="card-date">${formatDate(t.date)}</span>
+      </div>
+      <div class="stream-links">${renderLinks(t.links)}</div>
+    </div>`;
+  }).join('');
+}
+
+function renderGenreView() {
+  const wrap = document.getElementById('feed-wrap');
+  const list = filtered();
+  const byGenre = {};
+  list.forEach(t => {
+    if (!byGenre[t.genre]) byGenre[t.genre] = {};
+    if (!byGenre[t.genre][t.band]) byGenre[t.genre][t.band] = [];
+    byGenre[t.genre][t.band].push(t);
+  });
+  if (!Object.keys(byGenre).length) {
+    wrap.innerHTML = `<div class="empty-state"><div class="big">♪</div><div>Keine Tracks gefunden.</div></div>`;
+    return;
+  }
+  let html = '';
+  for (const genre in byGenre) {
+    const gc = GENRE_CLASS[genre] || 'g-other';
+    html += `<div style="margin-bottom:24px;">
+      <div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--text3);letter-spacing:.08em;text-transform:uppercase;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--border);">
+        <span class="card-badge ${gc}">${esc(genre)}</span>
+      </div>`;
+    for (const band in byGenre[genre]) {
+      html += `<div style="margin-bottom:12px;">
+        <div style="font-size:13px;font-weight:500;color:var(--text2);margin-bottom:6px;padding-left:2px;">${esc(band)}</div>`;
+      byGenre[genre][band].forEach(t => {
+        html += `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:10px 14px;margin-bottom:6px;">
+          <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px;">
+            <span style="font-size:13px;color:var(--text);">${esc(t.title)}</span>
+            <span style="font-family:'DM Mono',monospace;font-size:10px;color:var(--text3);">${formatDate(t.date)}</span>
+          </div>
+          <div class="stream-links">${renderLinks(t.links)}</div>
+        </div>`;
+      });
+      html += `</div>`;
+    }
+    html += `</div>`;
+  }
+  wrap.innerHTML = html;
+}
+
+function renderTree() {
+  const tree = document.getElementById('tree');
+  const byGenre = {};
+  tracks.forEach(t => {
+    if (!byGenre[t.genre]) byGenre[t.genre] = {};
+    if (!byGenre[t.genre][t.band]) byGenre[t.genre][t.band] = [];
+    byGenre[t.genre][t.band].push(t);
+  });
+  if (!Object.keys(byGenre).length) {
+    tree.innerHTML = `<div style="padding:20px 16px;color:var(--text3);font-size:11px;font-family:'DM Mono',monospace;">leer</div>`;
+    return;
+  }
+  let html = '';
+  for (const genre in byGenre) {
+    const total = Object.values(byGenre[genre]).reduce((a,b) => a+b.length, 0);
+    const gid = 'g-' + encodeURIComponent(genre);
+    html += `
+      <div class="genre-row" onclick="tog('${gid}','ga-${gid}')">
+        <span class="genre-arrow" id="ga-${gid}">▶</span>
+        ${esc(genre)}
+        <span class="genre-count">${total}</span>
+      </div>
+      <div class="band-group" id="${gid}">`;
+    for (const band in byGenre[genre]) {
+      const bid = gid + '-' + encodeURIComponent(band);
+      html += `
+        <div class="band-row" onclick="tog('${bid}','ba-${bid}')">
+          <span class="band-arrow" id="ba-${bid}">▶</span>${esc(band)}
+        </div>
+        <div class="track-group" id="${bid}">
+          ${byGenre[genre][band].map(t => `<div class="track-row">${esc(t.title)}</div>`).join('')}
+        </div>`;
+    }
+    html += `</div>`;
+  }
+  tree.innerHTML = html;
+}
+
+function tog(id, arrowId) {
+  document.getElementById(id).classList.toggle('open');
+  document.getElementById(arrowId).classList.toggle('open');
+}
+
+function setView(v, el) {
+  currentView = v;
+  document.querySelectorAll('.view-tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  renderMain();
+}
+
+function renderMain() {
+  if (currentView === 'genre') renderGenreView();
+  else renderFeed();
+}
+
+function renderAll() {
+  renderTree();
+  renderMain();
+  document.getElementById('track-count').textContent = tracks.length + ' track' + (tracks.length !== 1 ? 's' : '');
+}
+
+async function loadTracks() {
+  try {
+    // Cache-busting: frische Daten bei jedem Seitenaufruf
+    const res = await fetch(TRACKS_URL + '?v=' + Date.now());
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    tracks = await res.json();
+    document.getElementById('info-box').classList.add('visible');
+    renderAll();
+  } catch(e) {
+    document.getElementById('feed-wrap').innerHTML = `
+      <div class="empty-state">
+        <div class="big">⚠</div>
+        <div>tracks.json konnte nicht geladen werden.</div>
+        <div style="margin-top:6px;font-size:10px;">Liegt die Datei im gleichen Ordner wie index.html?</div>
+      </div>`;
+    document.getElementById('track-count').textContent = 'fehler';
+  }
+}
+
+loadTracks();
+</script>
+</body>
+</html>

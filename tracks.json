@@ -1,0 +1,13 @@
+[
+  {
+    "title": "Beispiel-Track",
+    "band": "Deine Lieblingsband",
+    "genre": "Electronic",
+    "note": "Dieser Track kann gelöscht werden",
+    "date": "2026-05-11T12:00:00.000Z",
+    "links": [
+      { "platform": "Spotify", "url": "https://open.spotify.com" },
+      { "platform": "YouTube", "url": "https://youtube.com" }
+    ]
+  }
+]
