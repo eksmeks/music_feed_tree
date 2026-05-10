@@ -1,23 +1,13 @@
 [
   {
-    "title": "track",
-    "band": "artist",
-    "genre": "genre",
-    "note": "track note",
+    "title": "Beispiel-Track",
+    "band": "Deine Lieblingsband",
+    "genre": "Electronic",
+    "note": "Dieser Track kann gelöscht werden",
     "date": "2026-05-11T12:00:00.000Z",
     "links": [
-      { "platform": "Soundcloud", "url": "https://soundcloud.com" },
+      { "platform": "Spotify", "url": "https://open.spotify.com" },
       { "platform": "YouTube", "url": "https://youtube.com" }
-    ]
-  }
-  {
-    "title": "Mr Crowley",
-    "band": "Ozzy Ozbourne",
-    "genre": "Rock",
-    "note": "BS",
-    "date": "2026-05-11T12:00:00.000Z",
-    "links": [
-      { "platform": "YouTube", "url": "https://www.youtube.com/watch?v=G3LvhdFEOqs&pp=ygUYYmxhY2sgc2FiYmF0aCBtciBjcm93bGV5" }
     ]
   }
 ]
